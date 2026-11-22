@@ -1,0 +1,55 @@
+# Driver Monitoring System - all tunable settings in one place.
+# Times are in seconds, angles in degrees.
+
+camera:
+  index: 0            # 0 = built-in webcam. Try 1 for an external USB camera.
+  width: 640
+  height: 480
+  mirror: true        # flip like a mirror, so "Left" means the driver's own left
+
+calibration:
+  seconds: 5          # driver looks at the road with eyes open at the start
+
+drowsiness:
+  ear_ratio: 0.75     # eyes count as closed when EAR < 0.75 x the driver's open-eye EAR
+  ear_fallback: 0.21  # threshold used if calibration fails
+  closed_seconds: 1.5 # eyes closed this long = Drowsy (microsleep)
+  perclos_window: 60  # PERCLOS = % of time eyes were closed in the last 60 s
+  perclos_threshold: 0.30
+  blink_rate_max: 25  # blinks per minute above this = Drowsy (fatigue sign)
+  blink_rate_min_window: 30   # only judge blink rate after 30 s of data
+  blink_max_seconds: 0.5      # a closure shorter than this counts as a blink
+
+distraction:
+  yaw_threshold: 30         # head turned left/right more than this
+  pitch_down_threshold: 20  # head tilted down more than this (looking at lap)
+  pitch_up_threshold: 25    # head tilted up more than this
+  seconds: 2.0              # must last this long to count as Distracted
+  no_face_seconds: 2.0      # face not visible this long = Distracted
+
+objects:
+  model: models/yolo11n.pt
+  imgsz: 640
+  every_n_frames: 2         # run YOLO every 2nd frame to keep the app fast
+  window: 15                # look at the last 15 YOLO runs
+  min_fraction: 0.6         # object must appear in 60% of them
+  face_margin: 0.6          # cup/food must be within the face box grown by 60%
+  conf:                     # minimum YOLO confidence per group
+    phone: 0.45
+    drink: 0.40
+    food: 0.35
+  classes:                  # COCO class names in each group
+    phone: [cell phone]
+    drink: [cup, bottle, wine glass]
+    food: [banana, apple, sandwich, orange, hot dog, pizza, donut, cake, carrot, broccoli, fork, spoon]
+
+state:
+  hold_seconds: 0.7   # keep a risky state this long after the signal stops (no flicker)
+
+alerts:
+  audio: true
+  cooldown_seconds: 4 # minimum gap between beeps
+
+logging:
+  data_dir: data
+  sample_every: 1.0   # write one row to samples.csv every second

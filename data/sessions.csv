@@ -1,0 +1,4 @@
+Session_ID,Driver_ID,Start_Time,End_Time,Duration_s,Lighting,Camera_Position,Glasses,Test_Mode,Source,Calibrated,EAR_Baseline,EAR_Threshold,Yaw_Baseline,Pitch_Baseline,Events,Risky_Events,Notes
+S01,D01,2026-11-21 21:36:01.317,2026-11-21 21:40:32.244,270.9,,,,0,webcam,1,0.3411,0.2558,-18.33,4.94,48,24,
+S02,D01,2026-11-21 21:40:50.643,2026-11-21 21:41:33.564,42.9,,,,0,webcam,1,0.3273,0.2455,-15.74,4.57,9,4,
+S03,D01,2026-11-22 09:18:53.484,2026-11-22 09:20:24.908,91.4,,,,0,webcam,1,0.2903,0.2177,-11.61,2.52,21,11,
