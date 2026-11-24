@@ -18,6 +18,7 @@ from monitor.head_pose import MODEL_POINTS, POSE_IDS, camera_matrix, estimate_he
 from monitor.logger import SessionLogger, next_session_id
 from monitor.objects import Detection, ObjectTracker
 from monitor.state import FrameSignals, StateMachine
+import main
 
 CFG = yaml.safe_load(open(os.path.join(os.path.dirname(__file__), "..", "config.yaml"), encoding="utf-8"))
 FPS = 30
@@ -208,3 +209,53 @@ def test_logger_writes_csvs_and_session_ids(tmp_path):
     assert next_session_id(d) == "S02"
     rows = open(os.path.join(d, "events.csv"), encoding="utf-8").read().splitlines()
     assert rows[0].startswith("Session_ID,Event_ID") and ",Drowsy,eye_closure," in rows[1]
+
+
+@pytest.mark.parametrize("test_mode", [True, False])
+def test_runner_saves_only_non_test_sessions(tmp_path, monkeypatch, test_mode):
+    class FakeCalibrator:
+        def result(self):
+            return {
+                "ok": True,
+                "ear_baseline": 0.3,
+                "ear_threshold": 0.2,
+                "yaw0": 0.0,
+                "pitch0": 0.0,
+            }
+
+    class FakeState:
+        def close(self, _time):
+            return None
+
+    monkeypatch.setattr(main, "DrowsinessTracker", lambda *_args: object())
+    monkeypatch.setattr(main, "DistractionTracker", lambda *_args: object())
+    monkeypatch.setattr(main, "StateMachine", lambda *_args: FakeState())
+
+    runner = main.Runner.__new__(main.Runner)
+    runner.cfg = {
+        "drowsiness": {},
+        "distraction": {},
+        "state": {"hold_seconds": 0.7},
+        "logging": {"data_dir": str(tmp_path)},
+    }
+    runner.args = type("Args", (), {
+        "test_mode": test_mode,
+        "driver": "D01",
+        "lighting": "bright",
+        "camera_position": "front",
+        "glasses": "no",
+        "video": None,
+        "notes": "",
+    })()
+    runner.session_id = "S01"
+    runner.logger = None
+    runner.calibrator = FakeCalibrator()
+    runner.last_t = 0.0
+
+    runner.finish_calibration(1.0)
+    runner.finish()
+
+    session_file = tmp_path / "sessions.csv"
+    assert session_file.exists() == (not test_mode)
+    assert (tmp_path / "events.csv").exists() is False
+    assert (tmp_path / "samples.csv").exists() is False

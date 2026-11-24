@@ -11,7 +11,8 @@ statistical analysis in R.
 ## 1. Setup (Windows, one time)
 
 1. Install **Python 3.11** from https://www.python.org/downloads/windows/
-   (tick **"Add python.exe to PATH"** in the installer). 3.12 also works.
+   (tick **"Add python.exe to PATH"** in the installer). Python 3.12 also works;
+   the setup script can use 3.14 if that is the Python version installed.
 2. Copy the `driver_monitor` folder anywhere, e.g. `Documents\driver_monitor`.
 3. Double-click **`setup.bat`**. It creates a virtual environment and installs the
    libraries (about 1 to 2 GB, mostly PyTorch for YOLO). This takes a few minutes.
@@ -21,25 +22,44 @@ app works offline after setup.
 
 ## 2. Running it
 
-Double-click **`run.bat`**, or open a terminal in the folder and run:
+Double-click **`run.bat`** to launch the local web dashboard in your browser. It listens
+only on this computer at `http://127.0.0.1:8765`; it is not exposed to your network.
+Or open a terminal in the folder and run:
 
 ```bat
-.venv\Scripts\activate
 python main.py --driver D01
 ```
 
-1. A window opens. For the first **5 seconds**, look at the screen/road with your eyes
-   open. This is **calibration** (the yellow bar).
-2. After that the app monitors you. The bottom-left panel shows the state, EAR, blink
-   rate, head angles and FPS. Risky behavior shows a red banner and a beep.
-3. Press **q** to stop. The session is saved in `data\`.
+1. In the browser dashboard, choose a driver ID and camera, then click
+   **Start monitoring**. The live preview and status cards show the current behavior,
+   EAR, blink rate, PERCLOS and head pose.
+2. For the first **5 seconds**, look at the screen/road with your eyes open. This is
+   **calibration**. Risky behavior shows a red banner and can play an alert beep.
+3. Click **Stop** or press **q** / **Esc** to end monitoring. Normal sessions are saved
+   in `data\`; sessions run with **Test mode** enabled are not saved.
+
+The previous desktop dashboard is still available with `python main.py --desktop`.
 
 | Key | Action |
 |---|---|
-| `q` / `Esc` | quit and save |
+| `q` / `Esc` | stop and save |
 | `c` | recalibrate (e.g. after moving the camera) |
 | `m` | mute / unmute the beep |
-| `0`-`5` | (test mode only) set the true label |
+| `0`-`5` | (test mode only) set the temporary true label |
+
+The dashboard also provides buttons for stopping, recalibrating and muting, plus
+session settings for lighting, camera position, glasses and test mode. You can upload
+a recorded video instead of using the webcam. For automated video processing without
+the dashboard, use
+`python main.py --headless --video clip.mp4`.
+
+**Test mode is temporary:** it lets you try monitoring and change the true label, but
+does not write session, event, or sample data to the CSV files.
+
+Use the **Session history** panel to search the current page, view a session's event
+details, or select and delete saved sessions. Deletion also removes that session's
+event and sample rows from the local CSV files, and is unavailable while monitoring
+is active.
 
 Useful options:
 
@@ -53,6 +73,9 @@ Useful options:
 --video clip.mp4             analyse a recorded video instead of the webcam
 --no-audio                   no beeps
 --no-objects                 turn off YOLO (faster, face-only)
+--desktop                    open the optional desktop dashboard
+--port 8766                  use a different local web port
+--no-browser                 start the web server without opening a browser tab
 ```
 
 If the camera doesn't open, close other apps that use it (Teams, Zoom, the Camera app)
@@ -180,6 +203,9 @@ python main.py --driver D02 --test-mode --lighting dim --camera-position left-45
 ```
 driver_monitor/
   main.py            the app: reads frames, runs the detectors, draws, logs
+  monitor/gui.py     desktop dashboard and session controls
+  monitor/web.py     local-only web server and session API
+  monitor/web_ui/    browser dashboard assets
   config.yaml        all thresholds and settings
   monitor/
     camera.py        webcam / video input

@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0a1020">
+  <title>Driver Monitor | Local Dashboard</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body data-defaults="{{ defaults|tojson|forceescape }}">
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Driver Monitor home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <path d="M5 19.5 8.2 11a3 3 0 0 1 2.8-1.9h10a3 3 0 0 1 2.8 1.9l3.2 8.5v5a1.5 1.5 0 0 1-1.5 1.5h-1a1.5 1.5 0 0 1-1.5-1.5V23H9v1.5A1.5 1.5 0 0 1 7.5 26h-1A1.5 1.5 0 0 1 5 24.5v-5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M8 18h16M11 22h.01M21 22h.01M11 13.5h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="23.5" cy="8" r="4.5" fill="#35d3ad"/>
+            <path d="m21.7 8 1.2 1.2 2.5-2.6" stroke="#07131c" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <strong>DRIVER<span>MONITOR</span></strong>
+          <small>LOCAL SAFETY CONSOLE</small>
+        </span>
+      </a>
+      <div class="topbar-meta">
+        <span class="privacy-chip"><span class="privacy-dot"></span> THIS DEVICE ONLY</span>
+        <span class="status-pill" id="connectionStatus"><i></i><span>READY</span></span>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <section class="primary-column">
+        <article class="panel camera-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">LIVE MONITORING</p>
+              <h1>Driver view</h1>
+            </div>
+            <div class="session-chip"><span class="pulse-dot"></span><span id="sessionId">NO ACTIVE SESSION</span></div>
+          </div>
+          <div class="video-stage" id="videoStage">
+            <img id="videoFeed" alt="Live annotated camera feed" hidden>
+            <div class="video-empty" id="videoEmpty">
+              <div class="camera-glyph" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none">
+                  <rect x="5" y="12" width="27" height="24" rx="5" stroke="currentColor" stroke-width="1.8"/>
+                  <path d="m32 20 11-6v20l-11-6V20Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                  <circle cx="18.5" cy="24" r="5.5" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+              </div>
+              <strong>Camera preview is paused</strong>
+              <span>Set up a session and select <b>Start monitoring</b> to begin.</span>
+            </div>
+            <div class="risk-banner" id="riskBanner" hidden>
+              <span class="risk-icon">!</span>
+              <span id="riskText">Attention required</span>
+            </div>
+            <span class="video-badge"><span class="record-dot"></span> LIVE</span>
+            <span class="fps-badge" id="fpsValue">— FPS</span>
+          </div>
+          <div class="camera-controls">
+            <button class="button button-primary" id="startButton" type="button">
+              <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 4.8v10.4L15 10 7 4.8Z" fill="currentColor"/></svg>
+              Start monitoring
+            </button>
+            <button class="button button-stop" id="stopButton" type="button" disabled>
+              <span class="stop-square"></span> Stop session
+            </button>
+            <button class="button button-subtle" id="recalibrateButton" type="button" disabled>Recalibrate</button>
+            <button class="button button-subtle" id="muteButton" type="button" disabled>Mute alerts</button>
+          </div>
+          <div class="session-footer">
+            <span class="live-message" id="liveMessage" role="status">Ready when you are.</span>
+            <span class="footer-help">Press <kbd>Q</kbd> or <kbd>Esc</kbd> to stop</span>
+          </div>
+        </article>
+
+        <div class="disclaimer">
+          <span class="info-mark">i</span>
+          Educational prototype only. Not a certified safety system; always drive responsibly.
+        </div>
+      </section>
+
+      <aside class="side-column">
+        <section class="panel behavior-panel" id="behaviorPanel">
+          <div class="behavior-heading">
+            <div>
+              <p class="eyebrow">CURRENT ASSESSMENT</p>
+              <h2 id="behaviorValue">Ready</h2>
+            </div>
+            <div class="assessment-icon" id="assessmentIcon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                <path d="M12 7v5l3.2 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16.5 4.5h4v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="m20.5 4.5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="confidence-row">
+            <span id="assessmentDetail">No active session</span>
+            <strong id="confidenceValue">—</strong>
+          </div>
+          <progress class="confidence-track" id="confidenceBar" max="100" value="0">0%</progress>
+        </section>
+
+        <section class="metric-grid" aria-label="Driver metrics">
+          <article class="metric-card">
+            <div class="metric-top"><span class="metric-icon eye-icon">◉</span><span class="metric-label">EYE ASPECT RATIO</span></div>
+            <strong class="metric-value" id="earValue">—</strong>
+            <span class="metric-caption">EAR</span>
+          </article>
+          <article class="metric-card">
+            <div class="metric-top"><span class="metric-icon blink-icon">↗</span><span class="metric-label">BLINK RATE</span></div>
+            <strong class="metric-value"><span id="blinkValue">—</span><small> / min</small></strong>
+            <span class="metric-caption">Rolling rate</span>
+          </article>
+          <article class="metric-card">
+            <div class="metric-top"><span class="metric-icon perclos-icon">◔</span><span class="metric-label">PERCLOS</span></div>
+            <strong class="metric-value" id="perclosValue">—</strong>
+            <span class="metric-caption">Eye closure · 60 sec</span>
+          </article>
+          <article class="metric-card">
+            <div class="metric-top"><span class="metric-icon head-icon">⌖</span><span class="metric-label">HEAD POSE</span></div>
+            <strong class="metric-value metric-word" id="headPoseValue">—</strong>
+            <span class="metric-caption" id="headAngles">Yaw — · Pitch —</span>
+          </article>
+        </section>
+
+        <section class="panel setup-panel">
+          <div class="panel-heading setup-heading">
+            <div>
+              <p class="eyebrow">SESSION CONFIGURATION</p>
+              <h2>Session setup</h2>
+            </div>
+            <span class="setup-step">01 <span>/ 02</span></span>
+          </div>
+          <form id="settingsForm" autocomplete="off">
+            <div class="form-grid">
+              <label class="form-field">
+                <span>Driver ID</span>
+                <input id="driverId" name="driver" type="text" maxlength="40" placeholder="e.g. D01" required>
+              </label>
+              <label class="form-field">
+                <span>Camera</span>
+                <input id="cameraIndex" name="camera" type="number" min="0" step="1" value="0" required>
+              </label>
+              <label class="form-field">
+                <span>Lighting</span>
+                <select id="lighting" name="lighting">
+                  <option value="">Not specified</option>
+                  <option value="bright">Bright</option>
+                  <option value="dim">Dim</option>
+                  <option value="night">Night</option>
+                </select>
+              </label>
+              <label class="form-field">
+                <span>Camera position</span>
+                <select id="cameraPosition" name="camera_position">
+                  <option value="">Not specified</option>
+                  <option value="front">Front</option>
+                  <option value="left-45">Left · 45°</option>
+                  <option value="right-45">Right · 45°</option>
+                </select>
+              </label>
+              <label class="form-field">
+                <span>Glasses</span>
+                <select id="glasses" name="glasses">
+                  <option value="">Not specified</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </label>
+            </div>
+            <label class="upload-field" for="videoFile">
+              <span class="upload-icon" aria-hidden="true">＋</span>
+              <span class="upload-copy"><strong>Analyze a video instead</strong><small id="uploadName">Optional · MP4, MOV, AVI or MKV · max 512 MB</small></span>
+              <span class="upload-action">Browse</span>
+              <input id="videoFile" type="file" accept=".mp4,.mov,.avi,.mkv,video/*">
+            </label>
+            <div class="option-row">
+              <label class="switch-option"><input id="testMode" type="checkbox"><span class="switch"></span><span>Test mode · not saved</span></label>
+              <label class="switch-option"><input id="objectDetection" type="checkbox" checked><span class="switch"></span><span>Object detection</span></label>
+              <label class="switch-option"><input id="audioAlerts" type="checkbox" checked><span class="switch"></span><span>Audio alerts</span></label>
+            </div>
+            <label class="form-field true-label-field" id="trueLabelField" hidden>
+              <span>True label · test mode</span>
+              <select id="trueLabel">
+                <option>Normal</option>
+                <option>Drowsy</option>
+                <option>Distracted</option>
+                <option>Using Phone</option>
+                <option>Eating</option>
+                <option>Drinking</option>
+              </select>
+            </label>
+          </form>
+          <p class="form-error" id="formError" role="alert" hidden></p>
+          <div class="local-note"><span>🔒</span> Camera and session data stay on this computer.</div>
+        </section>
+      </aside>
+    </main>
+
+    <section class="panel history-panel" aria-labelledby="historyTitle">
+      <div class="panel-heading history-heading">
+        <div>
+          <p class="eyebrow">SESSION ARCHIVE</p>
+          <h2 id="historyTitle">Session history</h2>
+        </div>
+        <div class="history-actions">
+          <span class="history-count" id="historyCount">Loading history...</span>
+          <button class="button button-subtle" id="refreshHistory" type="button">Refresh</button>
+          <button class="button button-stop" id="deleteSelected" type="button" disabled>Delete selected</button>
+        </div>
+      </div>
+      <div class="history-toolbar">
+        <label class="history-search">
+          <span aria-hidden="true">⌕</span>
+          <input id="historySearch" type="search" placeholder="Filter this page by session or driver">
+        </label>
+        <div class="history-pagination">
+          <button class="page-button" id="previousPage" type="button" disabled aria-label="Previous page">‹</button>
+          <span id="pageLabel">Page 1</span>
+          <button class="page-button" id="nextPage" type="button" disabled aria-label="Next page">›</button>
+        </div>
+      </div>
+      <div class="history-table-wrap">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th class="select-column"><input id="selectAllSessions" type="checkbox" aria-label="Select all sessions on this page"></th>
+              <th>Session</th>
+              <th>Driver</th>
+              <th>Started</th>
+              <th>Duration</th>
+              <th>Events</th>
+              <th>Risk events</th>
+              <th>Calibration</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="historyRows">
+            <tr><td class="history-empty" colspan="9">Loading session history...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <section class="history-detail" id="historyDetail" aria-live="polite" hidden>
+        <div class="detail-heading">
+          <div>
+            <p class="eyebrow">SESSION DETAILS</p>
+            <h3 id="detailTitle">Session</h3>
+          </div>
+          <button class="page-button" id="closeDetails" type="button" aria-label="Close session details">×</button>
+        </div>
+        <div class="detail-summary" id="detailSummary"></div>
+        <div class="detail-events-wrap">
+          <table class="history-table event-table">
+            <thead><tr><th>Time</th><th>Behavior</th><th>Duration</th><th>Trigger</th><th>Alert</th></tr></thead>
+            <tbody id="detailEvents"></tbody>
+          </table>
+        </div>
+      </section>
+      <p class="history-error" id="historyError" role="alert" hidden></p>
+    </section>
+
+    <p class="archive-note">History is stored locally in the sessions, events and samples CSV files.</p>
+  </div>
+</body>
+</html>
