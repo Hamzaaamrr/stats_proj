@@ -1,0 +1,8 @@
+Session_ID,Driver_ID,Minutes,Risky_Percent,Risk_Score,Risky_Events,Risky_Events_per_Hour,Band
+S01,D01,4.5,47.2,42.7,24,320,High
+S03,D01,1.5,39.1,34.4,11,440,High
+S04,D01,2.5,39.5,35.3,12,288,High
+S05,D01,3.6,24.8,24.5,16,267,Medium
+S06,D01,2.9,33.5,30.9,13,269,High
+S08,D01,1.3,27.8,19.8,9,415,Medium
+S09,D01,1.4,68.3,64.6,4,171,High

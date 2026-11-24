@@ -1,0 +1,38 @@
+Session_ID,Behavior,Seconds,Percent
+S01,Normal,143,52.8
+S01,Drowsy,61,22.5
+S01,Using Phone,31,11.4
+S01,Distracted,35,12.9
+S01,Drinking,1,0.4
+S02,Normal,30,69.8
+S02,Using Phone,13,30.2
+S03,Normal,56,60.9
+S03,Drowsy,22,23.9
+S03,Using Phone,4,4.3
+S03,Distracted,7,7.6
+S03,Drinking,3,3.3
+S04,Normal,92,60.5
+S04,Drowsy,41,27
+S04,Distracted,19,12.5
+S05,Normal,164,75.2
+S05,Drowsy,3,1.4
+S05,Using Phone,49,22.5
+S05,Distracted,2,0.9
+S06,Normal,117,66.5
+S06,Drowsy,44,25
+S06,Using Phone,3,1.7
+S06,Distracted,10,5.7
+S06,Drinking,2,1.1
+S07,Normal,44,89.8
+S07,Using Phone,4,8.2
+S07,Distracted,1,2
+S08,Normal,57,72.2
+S08,Drowsy,3,3.8
+S08,Using Phone,8,10.1
+S08,Distracted,3,3.8
+S08,Drinking,8,10.1
+S09,Normal,26,31.7
+S09,Drowsy,37,45.1
+S09,Using Phone,10,12.2
+S09,Distracted,9,11
+S10,Normal,55,100

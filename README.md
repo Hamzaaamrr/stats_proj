@@ -44,7 +44,8 @@ python main.py --driver D01
 Useful options:
 
 ```
---driver D02                 who is driving (for comparing people)
+--driver D02                 who is driving (for comparing people). If left out, the app
+                             asks at startup. d2, 2 and D2 are all saved as D02.
 --test-mode                  enable the true-label keys (for accuracy testing)
 --lighting dim               saved in sessions.csv (bright / dim / night)
 --camera-position left-45    saved in sessions.csv (front / left-45 / right-45)
@@ -138,8 +139,11 @@ All sessions are appended to the same three files and told apart by `Session_ID`
 
 **`samples.csv`**: one row **per second**: Behavior, Trigger, EAR, Head_Pose, angles,
 Confidence, Alert, Blink_Rate, PERCLOS, Face_Detected, Phone_Conf, Drink_Conf,
-Food_Conf, **True_Label** (test mode), FPS. Use this for behavior percentages and for
-accuracy, precision, recall and the confusion matrix.
+Food_Conf, **True_Label** (test mode), FPS, plus Raw_Phone_Conf / Raw_Drink_Conf /
+Raw_Food_Conf (YOLO's best score before the thresholds, for tuning them) and
+Object_At_Face (1 = eye closure / no-face were ignored because an object was at the face).
+Use this for behavior percentages and for accuracy, precision, recall and the confusion matrix.
+Files written by an older version are upgraded automatically; the original is kept as `.bak`.
 
 **`sessions.csv`**: one row per session: driver, start/end, duration, lighting, camera
 position, glasses, test mode, calibration values, number of events.

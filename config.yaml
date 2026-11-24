@@ -32,12 +32,15 @@ objects:
   imgsz: 640
   every_n_frames: 2         # run YOLO every 2nd frame to keep the app fast
   window: 15                # look at the last 15 YOLO runs
-  min_fraction: 0.6         # object must appear in 60% of them
+  min_fraction: 0.4         # object must appear in 40% of them (was 0.6: missed hidden phones/bottles)
   face_margin: 0.6          # cup/food must be within the face box grown by 60%
-  conf:                     # minimum YOLO confidence per group
-    phone: 0.45
-    drink: 0.40
-    food: 0.35
+  face_memory_seconds: 2.0  # if the face disappears (e.g. bottle in front of it), use its last position this long
+  at_face_hold_seconds: 1.5 # while a phone/cup/food was at the face this recently, ignore eye closure / no-face
+  raw_floor: 0.10           # YOLO results down to this confidence are logged (Raw_*_Conf) for tuning
+  conf:                     # minimum YOLO confidence per group (lowered from 0.45 / 0.40 / 0.35)
+    phone: 0.30
+    drink: 0.25
+    food: 0.25
   classes:                  # COCO class names in each group
     phone: [cell phone]
     drink: [cup, bottle, wine glass]

@@ -9,6 +9,7 @@ is told apart by Session_ID.
 """
 import csv
 import os
+import shutil
 from datetime import datetime, timedelta
 
 EVENT_FIELDS = ["Session_ID", "Event_ID", "Driver_ID", "Timestamp", "End_Time", "Duration_s",
@@ -17,7 +18,10 @@ EVENT_FIELDS = ["Session_ID", "Event_ID", "Driver_ID", "Timestamp", "End_Time", 
 SAMPLE_FIELDS = ["Session_ID", "Driver_ID", "Timestamp", "Time_s", "Behavior", "Trigger", "EAR",
                  "Head_Pose", "Yaw", "Pitch", "Roll", "Confidence", "Alert", "Blink_Rate",
                  "PERCLOS", "Face_Detected", "Phone_Conf", "Drink_Conf", "Food_Conf",
-                 "True_Label", "FPS"]
+                 "True_Label", "FPS",
+                 # added later: YOLO's best score before thresholds/face rule, and whether
+                 # an object was at the face (eye closure / no-face ignored then)
+                 "Raw_Phone_Conf", "Raw_Drink_Conf", "Raw_Food_Conf", "Object_At_Face"]
 SESSION_FIELDS = ["Session_ID", "Driver_ID", "Start_Time", "End_Time", "Duration_s", "Lighting",
                   "Camera_Position", "Glasses", "Test_Mode", "Source", "Calibrated",
                   "EAR_Baseline", "EAR_Threshold", "Yaw_Baseline", "Pitch_Baseline",
@@ -39,6 +43,23 @@ def next_session_id(data_dir):
     return f"S{n + 1:02d}"
 
 
+def _upgrade_header(path, fields):
+    """If an older version of the app wrote this file with fewer columns, rewrite it
+    with the new columns (old rows get them blank). A copy is kept as <name>.bak."""
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        if reader.fieldnames == fields:
+            return
+        rows = list(reader)
+    backup = path + ".bak"
+    if not os.path.exists(backup):
+        shutil.copyfile(path, backup)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
+        w.writeheader()
+        w.writerows(rows)
+
+
 class SessionLogger:
     def __init__(self, data_dir, session_id, driver_id, start_wallclock=None):
         os.makedirs(data_dir, exist_ok=True)
@@ -58,6 +79,8 @@ class SessionLogger:
         if name not in self._files:
             path = os.path.join(self.data_dir, name)
             new = not os.path.exists(path) or os.path.getsize(path) == 0
+            if not new:
+                _upgrade_header(path, fields)
             f = open(path, "a", newline="", encoding="utf-8")
             w = csv.DictWriter(f, fieldnames=fields)
             if new:

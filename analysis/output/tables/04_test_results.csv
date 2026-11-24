@@ -1,0 +1,4 @@
+Test,Question,p_value,Answer
+Poisson regression,Different risky-event rates between Session_ID ?,0.67,NO  (p = 0.67): the differences in risky-event rates could be chance.
+Chi-square,Different mix of risky behaviors between Session_ID ?,0.0216,YES (p = 0.0216): groups differ in WHICH risky behaviors they show.
+Kruskal-Wallis,Do some risky behaviors last longer?,0.0497,YES (p = 0.0497): some risky behaviors last longer than others.

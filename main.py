@@ -1,6 +1,6 @@
 """Driver Monitoring System - main program.
 
-Run:   python main.py --driver D01
+Run:   python main.py --driver D01      (or just: python main.py  - it will ask)
 Keys:  q = quit, c = recalibrate, m = mute/unmute
 Test mode (--test-mode): press the key for what the driver is REALLY doing,
        0 Normal, 1 Drowsy, 2 Distracted, 3 Using Phone, 4 Eating, 5 Drinking.
@@ -8,7 +8,9 @@ Test mode (--test-mode): press the key for what the driver is REALLY doing,
        True_Label in samples.csv so we can measure accuracy later.
 """
 import argparse
+import csv
 import os
+import re
 import sys
 import time
 from datetime import datetime
@@ -36,7 +38,7 @@ FACE_MODEL_URL = ("https://storage.googleapis.com/mediapipe-models/face_landmark
 
 def parse_args():
     p = argparse.ArgumentParser(description="Driver Monitoring System")
-    p.add_argument("--driver", default="D01", help="driver ID, e.g. D01")
+    p.add_argument("--driver", help="driver ID, e.g. D01 (asked at startup if left out)")
     p.add_argument("--session", help="session ID (default: next free S01, S02, ...)")
     p.add_argument("--camera", type=int, help="camera index (default from config.yaml)")
     p.add_argument("--video", help="analyse a recorded video file instead of the webcam")
@@ -50,6 +52,41 @@ def parse_args():
     p.add_argument("--headless", action="store_true", help="no window (for recorded videos)")
     p.add_argument("--config", default=os.path.join(HERE, "config.yaml"))
     return p.parse_args()
+
+
+def normalize_driver_id(text):
+    """'d2', '2', 'D2' and 'D02' all become 'D02', so one person is never split
+    into two drivers in the analysis. Other names are kept, in capitals."""
+    t = text.strip().upper().replace(" ", "")
+    m = re.fullmatch(r"D?(\d+)", t)
+    return f"D{int(m.group(1)):02d}" if m else t
+
+
+def known_drivers(data_dir):
+    path = os.path.join(data_dir, "sessions.csv")
+    if not os.path.exists(path):
+        return []
+    with open(path, newline="", encoding="utf-8") as f:
+        return sorted({r["Driver_ID"] for r in csv.DictReader(f) if r.get("Driver_ID")})
+
+
+def get_driver_id(args, data_dir):
+    """Driver ID from --driver, or asked in the terminal. Never silently defaults,
+    because a wrong ID mixes two people's data in the risk score."""
+    if args.driver:
+        return normalize_driver_id(args.driver)
+    if not sys.stdin or not sys.stdin.isatty():
+        sys.exit("No driver ID given. Add --driver D01 (or D02, D03 ...).")
+    known = known_drivers(data_dir)
+    print("Who is driving?" + (f"  Already recorded: {', '.join(known)}" if known else ""))
+    while True:
+        driver = normalize_driver_id(input("Driver ID (e.g. D01): "))
+        if not driver:
+            continue
+        if driver not in known and known:
+            if input(f"{driver} is a new driver. Correct? [y/n]: ").strip().lower() != "y":
+                continue
+        return driver
 
 
 def ensure_face_model(path):
@@ -68,6 +105,8 @@ def main():
     if args.video:
         args.video = os.path.abspath(args.video)
     os.chdir(HERE)  # so relative paths in config.yaml work from anywhere
+    data_dir = cfg["logging"]["data_dir"]
+    args.driver = get_driver_id(args, data_dir)  # ask first, before the slow model loading
 
     face_model = os.path.join("models", "face_landmarker.task")
     ensure_face_model(face_model)
@@ -82,7 +121,6 @@ def main():
     cam = cfg["camera"]
     source = FrameSource(args.camera if args.camera is not None else cam["index"],
                          cam["width"], cam["height"], cam["mirror"], args.video)
-    data_dir = cfg["logging"]["data_dir"]
     session_id = args.session or next_session_id(data_dir)
     alerts = AlertManager(audio=not args.no_audio, cooldown=cfg["alerts"]["cooldown_seconds"])
     print(f"Session {session_id}, driver {args.driver}. Press q to quit.")
@@ -165,14 +203,17 @@ class Runner:
         ds = self.distraction.update(st, pose)
 
         if self.detector is not None and self.frame_no % self.cfg["objects"]["every_n_frames"] == 0:
-            self.objects.update(self.detector.detect(frame), face.bbox if face else None)
+            self.objects.update(self.detector.detect(frame), face.bbox if face else None, st)
         self.frame_no += 1
         obj = self.objects.last
 
+        # While a phone/cup/food is at the face, lowered eyes or a hidden face are
+        # caused by the object (sipping, phone at the ear), not by sleep or looking away.
+        object_at_face = self.objects.object_at_face_recently(st)
         candidates = {}
-        if dz.drowsy:
+        if dz.drowsy and not (object_at_face and dz.trigger == "eye_closure"):
             candidates["Drowsy"] = (dz.confidence, dz.trigger)
-        if ds.distracted:
+        if ds.distracted and not (object_at_face and ds.trigger == "no_face"):
             candidates["Distracted"] = (ds.confidence, ds.trigger)
         for group, conf in obj.active.items():
             names = sorted({d.name for d in obj.detections if d.group == group})
@@ -198,7 +239,10 @@ class Runner:
                 "PERCLOS": _r(dz.perclos), "Face_Detected": int(face is not None),
                 "Phone_Conf": _r(obj.conf.get("phone", 0)), "Drink_Conf": _r(obj.conf.get("drink", 0)),
                 "Food_Conf": _r(obj.conf.get("food", 0)), "True_Label": self.true_label,
-                "FPS": _r(self.fps, 1)})
+                "FPS": _r(self.fps, 1),
+                "Raw_Phone_Conf": _r(obj.raw.get("phone", 0)), "Raw_Drink_Conf": _r(obj.raw.get("drink", 0)),
+                "Raw_Food_Conf": _r(obj.raw.get("food", 0)), "Object_At_Face": int(object_at_face)})
+            self.logger.flush()  # write to disk now, so the Shiny live tab sees it within ~1 s
 
         # ---- drawing ----
         draw_face(frame, face, dz.eyes_closed)

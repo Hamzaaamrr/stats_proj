@@ -1,0 +1,4 @@
+Session_ID,Version,Seconds,Strict,Tolerant,Lighting,Camera_Position,Glasses,EAR_Baseline
+S04,before fix,152,55.3,58.6,unknown,unknown,unknown,0.3431
+S05,before fix,218,55.5,56.4,unknown,unknown,unknown,0.3195
+S06,before fix,176,23.9,29,unknown,unknown,unknown,0.275

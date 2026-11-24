@@ -161,6 +161,35 @@ def test_cup_far_from_face_is_ignored():
     assert st.active["drink"] == pytest.approx(0.9)
 
 
+def test_bottle_still_counts_when_it_hides_the_face():
+    tr = ObjectTracker(CFG["objects"])
+    bottle = Detection("bottle", "drink", 0.5, (280, 150, 330, 300))
+    tr.update([], FACE, t=0.0)                  # face seen once
+    for i in range(15):                          # then hidden by the bottle
+        st = tr.update([bottle], None, t=0.1 + i * 0.05)
+    assert "drink" in st.active
+    tr2 = ObjectTracker(CFG["objects"])          # face never seen: no reference, ignored
+    for i in range(15):
+        st = tr2.update([bottle], None, t=i * 0.05)
+    assert "drink" not in st.active
+
+
+def test_raw_confidence_logged_but_threshold_applied():
+    tr = ObjectTracker(CFG["objects"])
+    weak = Detection("cell phone", "phone", 0.15, (450, 150, 520, 260))
+    st = tr.update([weak], FACE, t=0.0)
+    assert st.raw["phone"] == pytest.approx(0.15)
+    assert st.conf["phone"] == 0 and not st.detections
+
+
+def test_object_at_face_timer():
+    tr = ObjectTracker(CFG["objects"])
+    cup = Detection("cup", "drink", 0.6, (300, 250, 360, 330))
+    tr.update([cup], FACE, t=10.0)
+    assert tr.object_at_face_recently(11.0)
+    assert not tr.object_at_face_recently(10.0 + CFG["objects"]["at_face_hold_seconds"] + 0.1)
+
+
 # ---- State machine ---------------------------------------------------------
 def test_priority_and_events():
     sm = StateMachine(hold_seconds=0.5)

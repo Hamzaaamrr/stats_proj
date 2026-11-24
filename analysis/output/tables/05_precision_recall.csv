@@ -1,0 +1,7 @@
+Behavior,Real_Seconds,Predicted_Seconds,Correct_Seconds,Precision,Recall,F1
+Normal,208,373,152,40.8,73.1,52.4
+Drowsy,44,88,24,27.3,54.5,36.4
+Using Phone,140,52,48,92.3,34.3,50
+Distracted,92,31,21,67.7,22.8,34.1
+Drinking,37,2,2,100,5.4,10.2
+Eating,25,0,0,NA,0,NA
